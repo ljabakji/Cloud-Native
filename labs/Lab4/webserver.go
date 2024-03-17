@@ -10,7 +10,7 @@ func main() {
 	db := database{"shoes": 50, "socks": 5}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/list", db.list)
-	mux.HandleFunc("/price", db.price)
+	mux.HandleFunc("/prices ", db.price)
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
 }
 
