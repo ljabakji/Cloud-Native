@@ -1,0 +1,39 @@
+// Proto file for movie info service. Note this is gRPC proto syntax (not Go)
+syntax = "proto3";
+
+option go_package = "github.com/Adn02/CloudNativeCourse/lab5/movieapi";
+
+package movieapi;
+
+service MovieInfo {
+    // Sends a request for movie info
+    rpc GetMovieInfo (MovieRequest) returns (MovieReply) {}
+    rpc SetMovieInfo (MovieData) returns (Status) {}
+}
+
+// The request message containing movie name
+message MovieRequest {
+    string title = 1;
+}
+
+// The response message containining movie info
+message MovieReply {
+    int32 year = 1;
+    string director = 2;
+    repeated string cast = 3;
+}
+
+/* Added Messages for SetMovieInfo */
+
+//The request message containing movie info
+message MovieData {
+    string title = 1;
+    int32 year = 2;
+    string director = 3;
+    repeated string cast = 4;
+}
+
+// The response message containing the status code
+message Status {
+    string code = 1;
+}
