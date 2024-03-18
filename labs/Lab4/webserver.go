@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,8 +10,11 @@ import (
 func main() {
 	db := database{"shoes": 50, "socks": 5}
 	mux := http.NewServeMux()
-	mux.Handle("/list", http.HandlerFunc(db.list))
-	mux.Handle("/price", http.HandleFunc(db.price))
+	mux.HandleFunc("/list", http.HandlerFunc(db.list))
+	mux.HandleFunc("/create", db.create)
+	mux.HandleFunc("/update", db.update)
+	mus.HandleFunc("/delete", db.delete)
+
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
 }
 
@@ -29,20 +33,65 @@ func (db database) list(w http.ResponseWriter, req *http.Request) {
 func (db database) price(w http.ResponseWriter, req *http.Request) {
 	item := req.URL.Query().Get("item")
 	price, ok := db[item]
-	if !ok{
+	if !ok {
 
 		w.WriteHeader(http.StatusNotFound) // 404
 		fmt.Fprintf(w, "no such item: %q\n", item)
 		return
 
-
 	}
-		fmt.Fprintf(w, "%s\n", price)
-	
-		
+	fmt.Fprintf(w, "%s\n", price)
+
+}
+
+func (db database) create(w http.ResponseWriter, req *http.Request) {
+	var newItem struct {
+		Item  string  `json:"item"`
+		Price float32 `json:"price"`
+	}
+	err := json.NewDecoder(req.Body).Decode(&newItem)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
+	if _, ok := db[newItem.Item]; ok {
+		http.Error(w, "Item already exists", http.StatusBadRequest)
+		return
+	}
 
+	db[newItem.Item] = dollars(newItem.Price)
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (db database) update(w http.ResponseWriter, req *http.Request) {
+	item := req.URL.Query().Get("item")
+	if _, ok := db[item]; !ok {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	var updatedPrice float32
+	err := json.NewDecoder(req.Body).Decode(&updatedPrice)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	db[item] = dollars(updatedPrice)
+	w.WriteHeader(http.StatusOk)
+}
+
+func (db database) delete(w http.ResponseWriter, req *http.Request) {
+	item := req.URL.Query().Get("item")
+	if _, ok := db[item]; !ok {
+
+		http.Error(W, "Item not found", http.StatusNotFound)
+		return
+	}
+	delete(db, item)
+	w.WriteHeader(http.StatusOk)
+}
 
 func (db database) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path {
@@ -60,13 +109,8 @@ func (db database) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 		fmt.Fprintf(w, "%s\n", price)
 	default:
-		w.WriteHeader(http.StatusNotFound)//404
-		fmt.Fprintf(w, "no such page: %s\n",req.URL)
+		w.WriteHeader(http.StatusNotFound) //404
+		fmt.Fprintf(w, "no such page: %s\n", req.URL)
 
 	}
-}
-
-type HandlerFunc func(w ResponseWriter, r *Request)
-func (f HandlerFunc) ServerHTTP(w ResponseWriter, r *Request {
-	f(w, r)
 }
