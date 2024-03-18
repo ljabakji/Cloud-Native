@@ -2,7 +2,7 @@
 FROM golang:1.21-alpine AS build
 WORKDIR /src/
 COPY webserver.go /src/
-RUN go mod init github.com/eperezp2/CloudNativeCourse
+RUN go mod init github.com/ljabakji/CloudNativeCourse
 RUN go mod tidy
 RUN CGO_ENABLED=0 go build -o /bin/webserver
 FROM scratch
