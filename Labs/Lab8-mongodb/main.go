@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	//"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -24,7 +24,6 @@ type dollars float32
 func (d dollars) String() string { return fmt.Sprintf("$%.2f", d) }
 
 type Field struct {
-	ID        primitive.ObjectID `bson:"_id"`
 	Item      string             `bson:"item"`
 	Price     dollars            `bson:"price"`
 	Category  string             `bson:"category"`
@@ -62,8 +61,8 @@ func main() {
 	router.HandleFunc("/delete", db.delete)
 
 	// Start server
-	log.Println("Server started on port 8000")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Println("Server started on port  9000")
+	log.Fatal(http.ListenAndServe(":9000", router))
 }
 func (db *database) list(w http.ResponseWriter, r *http.Request) {
 	// Get items from the collection
@@ -114,7 +113,7 @@ func (db *database) price(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Write item price 
+	// Write item price
 	fmt.Fprintf(w, "%s\n", result.Price)
 }
 
@@ -123,14 +122,14 @@ func (db *database) create(w http.ResponseWriter, req *http.Request) {
 	newPrice := req.URL.Query().Get("price")
 
 	price, err := strconv.ParseFloat(newPrice, 32)
-	// Parsing Failure
+	// Handle Parsing Failure
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest) // 400
 		fmt.Fprintf(w, "invalid price: %q\n", newPrice)
 		return
 	}
 
-	// Check if item exists
+	// Check if item already exists
 	var existingItem Field
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -145,7 +144,7 @@ func (db *database) create(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Create item 
+	// Create a new item document
 	newItem := Field{
 		Item:      item,
 		Price:     dollars(price),
@@ -153,7 +152,7 @@ func (db *database) create(w http.ResponseWriter, req *http.Request) {
 		UpdatedAt: time.Now(),
 	}
 
-	// Insert item to database
+	// Insert the new item document into the collection
 	_, err = db.collection.InsertOne(ctx, newItem)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -226,7 +225,7 @@ func (db *database) delete(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Delete item from database
+	// Delete item from
 	_, err = db.collection.DeleteOne(ctx, bson.M{"item": item})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
